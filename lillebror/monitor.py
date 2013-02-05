@@ -28,6 +28,8 @@ class Monitor(object):
         self._process = None
         self._start_time = start_time
         self._monitor_path = monitor_path
+        self._file = None
+        self._writer = None
         self._samplers = []
         self._kill_flag = False
         self._monitor_task = gevent.spawn(self._monitor)
@@ -56,9 +58,10 @@ class Monitor(object):
 
         # TODO: Add outputs with a factory instead
         # TODO: Make output columns depend on the added samplers
-        self._file = open(self._monitor_path, 'w')
-        self._writer = csv.writer(self._file)
-        self._writer.writerow(('Sec', 'CPU', 'Memory', 'Switches'))
+        if self._monitor_path:
+            self._file = open(self._monitor_path, 'w')
+            self._writer = csv.writer(self._file)
+            self._writer.writerow(('Sec', 'CPU', 'Memory', 'Switches'))
 
         while not self._kill_flag:
             time = datetime.datetime.now() - self._start_time
@@ -66,11 +69,12 @@ class Monitor(object):
                 sampler.sample()
             values = [int(s.value) for s in self._samplers]
             # TODO: Make better output handling
-            self._writer.writerow((
-                int(time.total_seconds()),
-                values[0],
-                values[1],
-                values[2]))
+            if self._monitor_path:
+                self._writer.writerow((
+                    int(time.total_seconds()),
+                    values[0],
+                    values[1],
+                    values[2]))
             gevent.sleep(0.1)
 
     def _monitor_stop(self, task):
