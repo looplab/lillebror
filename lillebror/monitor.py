@@ -62,6 +62,8 @@ class Monitor(object):
             self._file = open(self._monitor_path, 'w')
             self._writer = csv.writer(self._file)
             self._writer.writerow(('Sec', 'CPU', 'Memory', 'Switches'))
+            self._file.flush()
+            os.fsync(self._file.fileno())
 
         while not self._kill_flag:
             time = datetime.datetime.now() - self._start_time
@@ -75,6 +77,8 @@ class Monitor(object):
                     values[0],
                     values[1],
                     values[2]))
+                self._file.flush()
+                os.fsync(self._file.fileno())
             gevent.sleep(0.1)
 
     def _monitor_stop(self, task):
