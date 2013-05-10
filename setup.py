@@ -16,15 +16,25 @@
 execfile('lillebror/version.py')
 
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
     name=__title__,
     version=__version__,
-    packages=['lillebror'],
+    packages=find_packages(exclude=['tests']),
+    scripts=['bin/lillebror'],
 
-    install_requires=['gevent', 'psutil'],
+    install_requires=[
+        'gevent',
+        'skal',
+        'psutil',
+        'pyzmq==2.2.0.1',
+        'zerorpc'
+    ],
+    dependency_links=[
+        'http://gevent.googlecode.com/files/gevent-1.0rc2.tar.gz'
+    ],
 
     tests_require=['nose'],
     test_suite='nose.collector',
