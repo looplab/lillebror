@@ -13,132 +13,63 @@
 # limitations under the License.
 
 
-import os
-import collections
-import datetime
-import csv
-
 import gevent
-import psutil
+
+from samplers import make_sampler
+from outputs import make_output
+
+
+default_config = {
+    "samplers": {
+        "cpu": {
+            "type": "cpu"
+        },
+        "memory": {
+            "type": "memory"
+        },
+        "task_switches": {
+            "type": "task_switches"
+        }
+    },
+    "outputs": {
+        "all": {
+            "type": "csv",
+            "samplers": ["cpu", "memory", "task_switches"],
+            "path": "/Users/max/Development/otis/tmp",
+            "start_time": 1000
+        }
+    }
+}
 
 
 class Monitor(object):
-    def __init__(self, start_time, monitor_path, pid=None):
-        self._pid = pid
-        self._process = None
-        self._start_time = start_time
-        self._monitor_path = monitor_path
-        self._file = None
-        self._writer = None
-        self._samplers = []
+    def __init__(self, config=default_config):
+        self._config = config
+
+        self._samplers = {}
+        for name, dct in self._config['samplers'].iteritems():
+            sampler = make_sampler(dct)
+            if sampler:
+                self._samplers[name] = sampler
+
+        self._outputs = {}
+        for name, dct in self._config['outputs'].iteritems():
+            output = make_output(dct, self._samplers)
+            if output:
+                self._outputs[name] = output
+
         self._kill_flag = False
         self._monitor_task = gevent.spawn(self._monitor)
-        self._monitor_task.link(self._monitor_stop)
 
     def stop(self):
         self._kill_flag = True
 
     def _monitor(self):
-        if not self._pid:
-            self._pid = os.getpid()
-
-        if self._monitor_path:
-            try:
-                self._process = psutil.Process(self._pid)
-            except psutil.NoSuchProcess:
-                return
-                # self.LOG.warning(
-                #     'failed to start system monitor, process already finished')
-
-        # TODO: Add samplers with a factory instead
-        if self._process:
-            self._samplers.append(CPUSampler(self._process))
-            self._samplers.append(MemorySampler(self._process))
-            self._samplers.append(SwitchSampler(self._process))
-
-        # TODO: Add outputs with a factory instead
-        # TODO: Make output columns depend on the added samplers
-        if self._monitor_path:
-            self._file = open(self._monitor_path, 'w')
-            self._writer = csv.writer(self._file)
-            self._writer.writerow(('Sec', 'CPU', 'Memory', 'Switches'))
-            self._file.flush()
-            os.fsync(self._file.fileno())
+        for name, output in self._outputs.iteritems():
+            output.start()
 
         while not self._kill_flag:
-            time = datetime.datetime.now() - self._start_time
-            for sampler in self._samplers:
-                sampler.sample()
-            values = [int(s.value) for s in self._samplers]
-            # TODO: Make better output handling
-            if self._monitor_path:
-                self._writer.writerow((
-                    int(time.total_seconds()),
-                    values[0],
-                    values[1],
-                    values[2]))
-                self._file.flush()
-                os.fsync(self._file.fileno())
             gevent.sleep(0.1)
 
-    def _monitor_stop(self, task):
-        if self._file:
-            self._file.close()
-
-
-class BaseSampler(object):
-    def __init__(self, process):
-        self._process = process
-        self._samples = collections.deque(maxlen=10)
-        self.value = 0.0
-
-    def _calc_average(self):
-        if self._samples:
-            s = sum(self._samples)
-            self.value = s / float(len(self._samples))
-
-    def sample(self):
-        try:
-            child_processes = self._process.get_children(recursive=True)
-        except psutil.NoSuchProcess:
-            return
-
-        s = 0.0
-        for p in child_processes:
-            new_s = self._get_sample(p)
-            if new_s:
-                s += new_s
-
-        self._samples.append(s)
-        self._calc_average()
-
-
-class CPUSampler(BaseSampler):
-    def _get_sample(self, p):
-        try:
-            return p.get_cpu_percent(0)
-        except psutil.AccessDenied:
-            pass
-
-
-class MemorySampler(BaseSampler):
-    def _get_sample(self, p):
-        try:
-            return p.get_memory_info()[0]
-        except psutil.AccessDenied:
-            pass
-
-
-class SwitchSampler(BaseSampler):
-    def __init__(self, sampler):
-        super(SwitchSampler, self).__init__(sampler)
-        self._prev = 0
-
-    def _get_sample(self, p):
-        try:
-            sample = p.get_num_ctx_switches()[0]
-            new = sample - self._prev
-            self._prev = sample
-            return new
-        except psutil.AccessDenied:
-            pass
+        for name, output in self._outputs.iteritems():
+            output.stop()
