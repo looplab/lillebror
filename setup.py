@@ -29,7 +29,6 @@ setup(
         'gevent',
         'skal',
         'psutil',
-        'pyzmq==2.2.0.1',
         'zerorpc'
     ],
     dependency_links=[
