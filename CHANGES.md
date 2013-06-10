@@ -5,6 +5,14 @@ Lillebror follows the Semantic Versioning standard, although not for development
 before version 1. Read more at http://semvar.org
 
 
+Version 0.2.1
+-------------
+
+Released on June 10th 2013
+
+- Don't specify pyzmq as a setup requirement
+
+
 Version 0.2.0
 -------------
 
