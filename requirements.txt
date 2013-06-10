@@ -2,7 +2,6 @@
 http://gevent.googlecode.com/files/gevent-1.0rc2.tar.gz
 psutil
 skal
-pyzmq==2.2.0.1
 zerorpc
 
 # Testing
