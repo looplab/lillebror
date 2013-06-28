@@ -14,10 +14,8 @@
 
 
 import os
-import collections
 
 import psutil
-# import gevent.subprocess
 
 
 def make_sampler(dct):
@@ -36,16 +34,10 @@ def make_sampler(dct):
 
 class BaseSampler(object):
     def __init__(self):
-        self._samples = collections.deque(maxlen=10)
         self.value = 0.0
 
     def sample(self):
-        self._calc_average()
-
-    def _calc_average(self):
-        if self._samples:
-            s = sum(self._samples)
-            self.value = s / float(len(self._samples))
+        raise NotImplemented
 
 
 class PythonSampler(BaseSampler):
@@ -89,13 +81,12 @@ class ProcessSampler(BaseSampler):
             return
         child_processes.append(self._process)
 
-        s = 0.0
+        s = 0
         for p in child_processes:
             new_s = self._get_sample(p)
             if new_s:
                 s += new_s
-
-        self._samples.append(s)
+        self.value = s
         super(ProcessSampler, self).sample()
 
 
@@ -110,7 +101,8 @@ class CPUSampler(ProcessSampler):
 class MemorySampler(ProcessSampler):
     def _get_sample(self, p):
         try:
-            return p.get_memory_info()[0]
+            rss, vms = p.get_memory_info()
+            return rss >> 20
         except psutil.AccessDenied:
             pass
 
@@ -118,13 +110,14 @@ class MemorySampler(ProcessSampler):
 class SwitchSampler(ProcessSampler):
     def __init__(self, sampler):
         super(SwitchSampler, self).__init__(sampler)
-        self._prev = 0
+        self._prev_total = 0
 
     def _get_sample(self, p):
         try:
-            sample = p.get_num_ctx_switches()[0]
-            new = sample - self._prev
-            self._prev = sample
-            return new
+            voluntary, involuntary = p.get_num_ctx_switches()
+            total = voluntary + involuntary
+            change = total - self._prev_total
+            self._prev_total = total
+            return change
         except psutil.AccessDenied:
             pass
