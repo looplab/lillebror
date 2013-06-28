@@ -14,7 +14,7 @@
 
 
 __title__ = 'lillebror'
-__version__ = '0.2.3'
+__version__ = '0.2.4'
 __author__ = 'Max Persson'
 __license__ = 'Apache License 2.0'
 __copyright__ = 'Copyright 2013 Max Persson'
