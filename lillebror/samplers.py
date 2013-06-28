@@ -102,7 +102,7 @@ class ProcessSampler(BaseSampler):
 class CPUSampler(ProcessSampler):
     def _get_sample(self, p):
         try:
-            return p.get_cpu_percent(0)
+            return p.get_cpu_percent(0.1)
         except psutil.AccessDenied:
             pass
 
