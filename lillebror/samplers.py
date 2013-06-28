@@ -94,6 +94,9 @@ class CPUSampler(ProcessSampler):
             return p.get_cpu_percent(0.1)
         except psutil.AccessDenied:
             pass
+        except psutil.NoSuchProcess:
+            pass
+        return 0
 
 
 class MemorySampler(ProcessSampler):
@@ -103,6 +106,9 @@ class MemorySampler(ProcessSampler):
             return rss >> 20
         except psutil.AccessDenied:
             pass
+        except psutil.NoSuchProcess:
+            pass
+        return 0
 
 
 class SwitchSampler(ProcessSampler):
@@ -119,3 +125,6 @@ class SwitchSampler(ProcessSampler):
             return change
         except psutil.AccessDenied:
             pass
+        except psutil.NoSuchProcess:
+            pass
+        return 0
