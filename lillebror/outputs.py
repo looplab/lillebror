@@ -86,10 +86,15 @@ class CSVOutput(BaseOutput):
             self._file.close()
 
     def _do_output(self):
+        # for name, sampler in self._samplers.iteritems():
+        #     values.append(sampler.value)
         time = datetime.datetime.now() - self._start_time
-        values = [int(time.total_seconds())]
-        for name, sampler in self._samplers.iteritems():
-            values.append(sampler.value)
+        values = [
+            int(time.total_seconds()),
+            int(self._samplers['cpu'].value),
+            int(self._samplers['memory'].value),
+            int(self._samplers['task_switches'].value)
+        ]
 
         if self._path:
             self._writer.writerow(values)
