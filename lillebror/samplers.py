@@ -37,7 +37,7 @@ class BaseSampler(object):
         self.value = 0.0
 
     def sample(self):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class PythonSampler(BaseSampler):
@@ -47,7 +47,6 @@ class PythonSampler(BaseSampler):
 
     def sample(self):
         self.value = eval(self._code)
-        super(PythonSampler, self).sample()
 
 
 class CommandSampler(BaseSampler):
@@ -57,7 +56,7 @@ class CommandSampler(BaseSampler):
 
     def sample(self):
         # TODO: implement command call here
-        super(CommandSampler, self).sample()
+        pass
 
 
 class ProcessSampler(BaseSampler):
@@ -87,7 +86,6 @@ class ProcessSampler(BaseSampler):
             if new_s:
                 s += new_s
         self.value = s
-        super(ProcessSampler, self).sample()
 
 
 class CPUSampler(ProcessSampler):
