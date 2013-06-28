@@ -112,17 +112,11 @@ class MemorySampler(ProcessSampler):
 
 
 class SwitchSampler(ProcessSampler):
-    def __init__(self, sampler):
-        super(SwitchSampler, self).__init__(sampler)
-        self._prev_total = 0
-
     def _get_sample(self, p):
         try:
             voluntary, involuntary = p.get_num_ctx_switches()
             total = voluntary + involuntary
-            change = total - self._prev_total
-            self._prev_total = total
-            return change
+            return total
         except psutil.AccessDenied:
             pass
         except psutil.NoSuchProcess:
