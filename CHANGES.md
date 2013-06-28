@@ -5,6 +5,14 @@ Lillebror follows the Semantic Versioning standard, although not for development
 before version 1. Read more at http://semvar.org
 
 
+Version 0.2.5
+-------------
+
+Released on June 28th 2013
+
+- Fix bug where a process was sampled after it finished
+
+
 Version 0.2.4
 -------------
 
